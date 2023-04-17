@@ -17,7 +17,7 @@ public class ImageRecognition {
         if (isFilledRectangle(input)) return "I";
         if (isFilledRectangleWithUnfilledAreaInside(input)) return "O";
         if (areTwoRectanglesOverlapping(input)) return "T";
-//        if (isFilledRectangleWithUnfilledAreaAndBrokenBorder(input)) return "C";
+        if (isFilledRectangleWithUnfilledAreaAndBrokenBorder(input)) return "C";
         if (isTwoRectanglesLyingOnTopOfEachOther(input)) return "L";
         return "X";  // If none of the above conditions match, it must be an "X" symbol
     }
@@ -116,12 +116,12 @@ public class ImageRecognition {
      *
      * @return true if 2 rectangles are lying on top of each other else false.
      */
-    private boolean isTwoRectanglesLyingOnTopOfEachOther(int[][] sequence) {
-        final int length = sequence.length;
+    private boolean isTwoRectanglesLyingOnTopOfEachOther(int[][] matrix) {
+        final int length = matrix.length;
         for (int i = 0; i < length; i++) {
             for (int j = 0; j < length; j++) {
-                if (sequence[i][j] == 1 && (i >= length - 1 || j >= length - 1 || sequence[i + 1][j] != 1
-                        || sequence[i][j + 1] != 1 || sequence[i + 1][j + 1] != 1))
+                if (matrix[i][j] == 1 && (i >= length - 1 || j >= length - 1 || matrix[i + 1][j] != 1
+                        || matrix[i][j + 1] != 1 || matrix[i + 1][j + 1] != 1))
                 {
                     // rectangles don't overlap, return false
                     return false;
@@ -163,45 +163,50 @@ public class ImageRecognition {
      *
      * @return true if found else false.
      */
-    private boolean isFilledRectangleWithUnfilledAreaAndBrokenBorder(int[][] sequenceX) {
-        int numRows = sequenceX.length;
-        int numCols = sequenceX[0].length;
-        int startRow = -1, endRow = -1, startCol = -1, endCol = -1;
-
-        for (int i = 0; i < numRows; i++) {
-            for (int j = 0; j < numCols; j++) {
-                if (sequenceX[i][j] == 1) {
-                    if (startRow == -1) {
-                        startRow = i;
+    private boolean isFilledRectangleWithUnfilledAreaAndBrokenBorder(int[][] matrix) {
+        int start = -1; // index of first row containing 1
+        int end = -1; // index of last row containing 1
+        
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                if (matrix[i][j] == 1) {
+                    if (start == -1) {
+                        start = i;
                     }
-                    if (startCol == -1 || j < startCol) {
-                        startCol = j;
-                    }
-                    if (endCol == -1 || j > endCol) {
-                        endCol = j;
-                    }
+                    end = i;
                 }
             }
-            if (startRow != -1 && endRow == -1) {
-                endRow = i;
-            }
         }
-
-        // Check if the rectangle is filled and there is an unfilled area inside
-        if (startRow != -1 && endRow != -1 && startCol != -1 && endCol != -1) {
-            for (int i = startRow; i <= endRow; i++) {
-                for (int j = startCol; j <= endCol; j++) {
-                    if (sequenceX[i][j] != 1) {
-                        return false; // The rectangle is not filled
+        
+        if (start == -1 || end == -1) {
+            // There are no 1s in the matrix
+            return false;
+        }
+        
+        // Check if the two rows have the same number of 1s and 0s, and if the 1s are in the same position
+        if (firstOneRow != -1 && lastOneRow != -1 && firstOneRow == lastOneRow) {
+            int numOnes = 0;
+            int numZeros = 0;
+            int firstOnePos = -1;
+            int lastOnePos = -1;
+            
+            for (int j = 0; j < matrix[firstOneRow].length; j++) {
+                if (matrix[firstOneRow][j] == 1) {
+                    numOnes++;
+                    if (firstOnePos == -1) {
+                        firstOnePos = j;
                     }
-                    if (i > startRow && i < endRow && j > startCol && j < endCol && sequenceX[i][j] != 0) {
-                        return false; // There is no unfilled area inside the rectangle
-                    }
+                    lastOnePos = j;
+                } else {
+                    numZeros++;
                 }
             }
-            return true; // The rectangle is filled and there is an unfilled area inside
+                
+            if (numOnes == numZeros && firstOnePos == lastOnePos) {
+                return true;
+            }
         }
-        return false; // No rectangle found
+        return false;
     }
 
     /**
